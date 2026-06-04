@@ -22,7 +22,7 @@ except:
 
 @app.route("/")
 def home():
-    return render_template("index.html")
+    return {"status": "API is running"}, 200
 
 @app.route("/predict", methods=["POST"])
 def predict():
