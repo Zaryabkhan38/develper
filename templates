@@ -1,0 +1,353 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Employee Attrition Predictor</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0e1a;
+      --surface: #111827;
+      --card: #1a2235;
+      --border: #2a3550;
+      --accent: #4f8ef7;
+      --accent2: #7c5cbf;
+      --danger: #ef4444;
+      --success: #10b981;
+      --text: #e2e8f0;
+      --muted: #8892a4;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      background-image:
+        radial-gradient(ellipse 80% 50% at 20% -20%, rgba(79,142,247,0.12) 0%, transparent 60%),
+        radial-gradient(ellipse 60% 40% at 80% 110%, rgba(124,92,191,0.10) 0%, transparent 60%);
+    }
+    header {
+      text-align: center;
+      padding: 56px 20px 32px;
+      position: relative;
+    }
+    header .badge {
+      display: inline-block;
+      background: linear-gradient(135deg, rgba(79,142,247,0.15), rgba(124,92,191,0.15));
+      border: 1px solid rgba(79,142,247,0.3);
+      color: var(--accent);
+      font-size: 12px;
+      font-weight: 500;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      padding: 6px 18px;
+      border-radius: 100px;
+      margin-bottom: 20px;
+    }
+    header h1 {
+      font-family: 'Syne', sans-serif;
+      font-size: clamp(2rem, 5vw, 3.2rem);
+      font-weight: 800;
+      background: linear-gradient(135deg, #fff 30%, var(--accent));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      line-height: 1.15;
+    }
+    header p {
+      color: var(--muted);
+      font-size: 1rem;
+      margin-top: 12px;
+      font-weight: 300;
+    }
+    .container {
+      max-width: 780px;
+      margin: 0 auto;
+      padding: 0 20px 80px;
+    }
+    .card {
+      background: var(--card);
+      border: 1px solid var(--border);
+      border-radius: 20px;
+      padding: 36px;
+      margin-bottom: 24px;
+    }
+    .card h2 {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.05rem;
+      font-weight: 700;
+      color: var(--muted);
+      letter-spacing: 1.5px;
+      text-transform: uppercase;
+      margin-bottom: 24px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    .card h2::after {
+      content:''; flex:1; height:1px; background:var(--border);
+    }
+    .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 18px; }
+    .field label {
+      display: block;
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--muted);
+      letter-spacing: 1px;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .field input, .field select {
+      width: 100%;
+      background: var(--surface);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-size: 0.95rem;
+      font-family: 'DM Sans', sans-serif;
+      outline: none;
+      transition: border-color 0.2s, box-shadow 0.2s;
+      appearance: none;
+    }
+    .field input:focus, .field select:focus {
+      border-color: var(--accent);
+      box-shadow: 0 0 0 3px rgba(79,142,247,0.15);
+    }
+    .field select option { background: var(--surface); }
+    .btn {
+      width: 100%;
+      padding: 16px;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      border: none;
+      border-radius: 12px;
+      color: #fff;
+      font-family: 'Syne', sans-serif;
+      font-size: 1rem;
+      font-weight: 700;
+      letter-spacing: 1px;
+      cursor: pointer;
+      transition: opacity 0.2s, transform 0.15s;
+      text-transform: uppercase;
+      margin-top: 8px;
+    }
+    .btn:hover { opacity: 0.88; transform: translateY(-1px); }
+    .btn:active { transform: translateY(0); }
+    .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    /* Result */
+    #result { display: none; }
+    .result-box {
+      border-radius: 20px;
+      padding: 36px;
+      text-align: center;
+      border: 1px solid var(--border);
+      position: relative;
+      overflow: hidden;
+    }
+    .result-box.attrition {
+      background: linear-gradient(135deg, rgba(239,68,68,0.1), rgba(239,68,68,0.05));
+      border-color: rgba(239,68,68,0.4);
+    }
+    .result-box.no-attrition {
+      background: linear-gradient(135deg, rgba(16,185,129,0.1), rgba(16,185,129,0.05));
+      border-color: rgba(16,185,129,0.4);
+    }
+    .result-icon { font-size: 3.5rem; margin-bottom: 16px; }
+    .result-label {
+      font-family: 'Syne', sans-serif;
+      font-size: 1.8rem;
+      font-weight: 800;
+      margin-bottom: 8px;
+    }
+    .result-label.attrition { color: var(--danger); }
+    .result-label.no-attrition { color: var(--success); }
+    .result-sub { color: var(--muted); font-size: 0.9rem; margin-bottom: 28px; }
+    .prob-bars { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+    .prob-item { background: var(--surface); border-radius: 12px; padding: 16px; }
+    .prob-item .prob-label { font-size: 11px; letter-spacing: 1.5px; text-transform: uppercase; color: var(--muted); margin-bottom: 10px; }
+    .prob-item .prob-val { font-family: 'Syne', sans-serif; font-size: 1.5rem; font-weight: 800; margin-bottom: 10px; }
+    .prob-item.danger .prob-val { color: var(--danger); }
+    .prob-item.success .prob-val { color: var(--success); }
+    .bar-bg { background: var(--border); border-radius: 100px; height: 6px; overflow: hidden; }
+    .bar-fill { height: 100%; border-radius: 100px; transition: width 0.8s cubic-bezier(.4,0,.2,1); }
+    .bar-fill.danger  { background: linear-gradient(90deg, var(--danger), #f87171); }
+    .bar-fill.success { background: linear-gradient(90deg, var(--success), #34d399); }
+
+    .spinner {
+      display: none;
+      width: 22px; height: 22px;
+      border: 2px solid rgba(255,255,255,0.3);
+      border-top-color: #fff;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+      margin: 0 auto;
+    }
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .error-msg { color: var(--danger); font-size: 0.88rem; text-align: center; padding: 12px; display: none; }
+
+    @media(max-width:560px) {
+      .grid { grid-template-columns: 1fr; }
+      .card { padding: 22px; }
+      .prob-bars { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header>
+  <div class="badge">ML Prediction System</div>
+  <h1>Employee Attrition<br/>Predictor</h1>
+  <p>Predict whether an employee is likely to leave the organization</p>
+</header>
+
+<div class="container">
+  <div class="card">
+    <h2>Employee Information</h2>
+    <div class="grid">
+      <div class="field">
+        <label>Age</label>
+        <input type="number" id="age" placeholder="e.g. 32" min="18" max="65"/>
+      </div>
+      <div class="field">
+        <label>Gender</label>
+        <select id="gender">
+          <option value="">Select Gender</option>
+          <option value="Male">Male</option>
+          <option value="Female">Female</option>
+          <option value="Non-Binary">Non-Binary</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Department</label>
+        <select id="department">
+          <option value="">Select Department</option>
+          <option value="Marketing">Marketing</option>
+          <option value="Engineering">Engineering</option>
+          <option value="Sales">Sales</option>
+          <option value="Hr">HR</option>
+          <option value="Finance">Finance</option>
+        </select>
+      </div>
+      <div class="field">
+        <label>Monthly Income (PKR)</label>
+        <input type="number" id="monthly_income" placeholder="e.g. 75000" min="10000"/>
+      </div>
+      <div class="field">
+        <label>Total Experience (Years)</label>
+        <input type="number" id="total_experience" placeholder="e.g. 8" min="0" max="45"/>
+      </div>
+      <div class="field">
+        <label>Tenure at Company (Years)</label>
+        <input type="number" id="tenure_at_co" placeholder="e.g. 3" min="0" max="40"/>
+      </div>
+      <div class="field" style="grid-column:1/-1">
+        <label>Overtime Eligible</label>
+        <select id="overtime_eligible">
+          <option value="">Select Option</option>
+          <option value="Yes">Yes</option>
+          <option value="No">No</option>
+        </select>
+      </div>
+    </div>
+    <div style="margin-top:24px">
+      <button class="btn" id="predictBtn" onclick="predict()">
+        <span id="btnText">Predict Attrition</span>
+        <div class="spinner" id="spinner"></div>
+      </button>
+    </div>
+    <div class="error-msg" id="errorMsg"></div>
+  </div>
+
+  <div id="result">
+    <div class="result-box" id="resultBox">
+      <div class="result-icon" id="resultIcon"></div>
+      <div class="result-label" id="resultLabel"></div>
+      <div class="result-sub"  id="resultSub"></div>
+      <div class="prob-bars">
+        <div class="prob-item success">
+          <div class="prob-label">Will Stay</div>
+          <div class="prob-val" id="probNo">—</div>
+          <div class="bar-bg"><div class="bar-fill success" id="barNo" style="width:0%"></div></div>
+        </div>
+        <div class="prob-item danger">
+          <div class="prob-label">Will Leave</div>
+          <div class="prob-val" id="probYes">—</div>
+          <div class="bar-bg"><div class="bar-fill danger" id="barYes" style="width:0%"></div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+async function predict() {
+  const fields = {
+    age: document.getElementById('age').value,
+    gender: document.getElementById('gender').value,
+    department: document.getElementById('department').value,
+    monthly_income: document.getElementById('monthly_income').value,
+    total_experience: document.getElementById('total_experience').value,
+    tenure_at_co: document.getElementById('tenure_at_co').value,
+    overtime_eligible: document.getElementById('overtime_eligible').value
+  };
+
+  for (const [k, v] of Object.entries(fields)) {
+    if (!v) {
+      showError('Please fill in all fields before predicting.');
+      return;
+    }
+  }
+
+  document.getElementById('errorMsg').style.display = 'none';
+  document.getElementById('predictBtn').disabled = true;
+  document.getElementById('btnText').style.display = 'none';
+  document.getElementById('spinner').style.display = 'block';
+  document.getElementById('result').style.display = 'none';
+
+  try {
+    const res = await fetch('/predict', {
+      method: 'POST',
+      headers: {'Content-Type': 'application/json'},
+      body: JSON.stringify(fields)
+    });
+    const data = await res.json();
+
+    if (data.status !== 'success') throw new Error(data.message || 'Prediction failed');
+
+    const isAttrition = data.prediction === 'Yes';
+    const box = document.getElementById('resultBox');
+    box.className = 'result-box ' + (isAttrition ? 'attrition' : 'no-attrition');
+    document.getElementById('resultIcon').textContent  = isAttrition ? '⚠️' : '✅';
+    document.getElementById('resultLabel').textContent = isAttrition ? 'Likely to Leave' : 'Likely to Stay';
+    document.getElementById('resultLabel').className   = 'result-label ' + (isAttrition ? 'attrition' : 'no-attrition');
+    document.getElementById('resultSub').textContent   = isAttrition
+      ? 'This employee has a high probability of leaving the organization.'
+      : 'This employee is expected to remain with the organization.';
+
+    document.getElementById('probNo').textContent  = data.probability_no  + '%';
+    document.getElementById('probYes').textContent = data.probability_yes + '%';
+    setTimeout(() => {
+      document.getElementById('barNo').style.width  = data.probability_no  + '%';
+      document.getElementById('barYes').style.width = data.probability_yes + '%';
+    }, 100);
+
+    document.getElementById('result').style.display = 'block';
+  } catch(e) {
+    showError('Error: ' + e.message);
+  } finally {
+    document.getElementById('predictBtn').disabled = false;
+    document.getElementById('btnText').style.display = 'inline';
+    document.getElementById('spinner').style.display = 'none';
+  }
+}
+
+function showError(msg) {
+  const el = document.getElementById('errorMsg');
+  el.textContent = msg; el.style.display = 'block';
+}
+</script>
+</body>
+</html>
